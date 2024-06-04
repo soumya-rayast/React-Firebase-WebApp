@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore'
 import db from "../firebase/firebaseConfig"
 import { Link } from 'react-router-dom'
 
 const Read = () => {
   const [userData, setUserData] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = async () => {
     setIsLoading(true);
+    
     try {
       const snapshot = await getDocs(collection(db, "users"));
       const user_data = snapshot.docs.map((doc) => {
@@ -18,8 +19,9 @@ const Read = () => {
       setUserData(user_data)
     } catch (err) {
       console.log(err);
+    }finally{
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   useEffect(() => {
@@ -30,11 +32,12 @@ const Read = () => {
     setIsLoading(true);
     try {
       await deleteDoc(doc(db, "users", id));
-      fetchData();
+      setUserData(userData.filter(user => user.id !==id))
+      // fetchData();
     } catch (err) {
       console.log(err);
-    }
-    setIsLoading(false);
+    }finally
+    {setIsLoading(false);}
   };
 
   return (
@@ -56,7 +59,7 @@ const Read = () => {
                   style={{ width: '200px', height: "200px", objectFit: "cover" }} />
 
                 <div className="card-body">
-                  <span>Date -{user.created.toDate().toDateString()}</span>
+                  <span>Date - {user.created.toDate().toDateString()}</span>
                   <h5 className='card-title'>
                     {user.fName}
                   </h5>

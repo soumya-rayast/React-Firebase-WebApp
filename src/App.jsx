@@ -7,7 +7,7 @@ function App() {
     <BrowserRouter>
     <Header/>
     <Routes>
-      <Route path='/' element={<Read/>}/>
+      <Route path='/read' element={<Read/>}/>
       <Route path='/create' element={<Create/>}/>
       <Route path='/edit/:id' element={<Create isEdit={true}/>}/>
     </Routes>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import db, { storage } from "../firebase/firebaseConfig";
 import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import { Timestamp, addDoc, collection, doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -12,18 +12,13 @@ const Create = () => {
     const [isEdit, setIsEdit] = useState(false);
     const navigate = useNavigate();
     const { id } = useParams();
-    console.log(id);
 
     useEffect(() => {
         if (!id) {
-            setIsEdit(false);
-            setFName("");
-            setFEmail("");
-            setFileUrl("");
+            fetchSingleData();
         }
         else {
-            setIsEdit(true);
-            fetchSingleData();
+            restForm();
         }
     }, [id])
 
@@ -31,78 +26,91 @@ const Create = () => {
         try {
             const docRef = doc(db, "users", id);
             const docSnap = await getDoc(docRef);
-            console.log(docSnap.data());
-            // if(docSnap.exists()){
-            //     const userData = docSnap.data();
-            //     setFName(userData.fName);
-            //     setFEmail(userData.fEmail);
-            //     setFileUrl(userData.fileUrl);
-            // }
-            setFName(docSnap.data().fName);
-            setFEmail(docSnap.data().fEmail);
-            setFileUrl(docSnap.data().fileUrl);
+            // console.log(docSnap.data());
+            // setFName(docSnap.data().fName);
+            // setFEmail(docSnap.data().fEmail);
+            // setFileUrl(docSnap.data().fileUrl);
+            if (docSnap.exists()) {
+                setFName(docSnap.data().fName);
+                setFEmail(docSnap.data().fEmail);
+                setFileUrl(docSnap.data().fileUrl);
+            } else {
+                console.log("No such Document")
+            }
         } catch (err) {
             console.log(err);
         }
     }
+    const restForm = () => {
+        setFName("");
+        setFEmail("");
+        setFileUrl("");
+    };
 
     // Function for handling image upload
     const handleUpload = async (e) => {
         let file = e.target.files[0];
-        setIsLoading(true);
-        try {
-            let imageRef = ref(storage, `images/${file.name}`);
-            await uploadBytesResumable(imageRef, file);
-            const url = await getDownloadURL(imageRef);
-            console.log(url);
-            setFileUrl(url);
-        } catch (err) {
-            console.log(err);
+        if (file) {
+            setIsLoading(true);
+            try {
+                let imageRef = ref(storage, `images/${file.name}`);
+                await uploadBytesResumable(imageRef, file);
+                const url = await getDownloadURL(imageRef);
+                console.log(url);
+                setFileUrl(url);
+            } catch (err) {
+                console.log(err);
+            } finally { setIsLoading(false); }
         }
-        setIsLoading(false);
     }
 
     // Handling the user's data
     const handleAdd = async (e) => {
         e.preventDefault();
         let data = {
-            _id: new Date().getUTCMilliseconds(),
-            fName: fName,
-            fEmail: fEmail,
-            fileUrl: fileUrl,
+            _id: new Date().getTime(),
+            fName,
+            fEmail,
+            fileUrl,
             created: Timestamp.now(),
         };
-        const useCollectionRef = collection(db, "users");
+        // const useCollectionRef = collection(db, "users");
         try {
-            await addDoc(useCollectionRef, data);
-            setFName("");
-            setFEmail("");
-            setFileUrl("");
-
+            // await addDoc(useCollectionRef, data);
+            await addDoc(collection(db, "users"), data)
+            // setFName("");
+            // setFEmail("");
+            // setFileUrl("");
+            restForm();
             navigate("/read");
         } catch (err) {
             console.log(err);
         }
     };
     // For edit function 
-    const handleEdit = async (e) => {
-        e.preventDefault();
+    const handleEdit = async () => {
+        // e.preventDefault();
         try {
             // const docRef = doc(db, "users", id)
             await updateDoc(doc(db, "users", id), {
-                fName: fName,
-                fEmail: fEmail,
-                fileUrl: fileUrl,
+                fName,
+                fEmail,
+                fileUrl,
             });
-            setFEmail("");
-            setFName("");
-            setFileUrl("");
+            restForm();
             navigate("/");
         } catch (err) {
             console.log(err)
         }
     }
-
+    const handleFormSubmit = (e) => {
+        e.preventDefault();
+        if (isEdit) {
+            handleEdit();
+        } else {
+            handleAdd();
+        }
+    };
     return (
         <div className='w-50 mx-auto'>
             <h2>{isEdit ? "Update a card" : "Add a card"}</h2>
@@ -111,7 +119,7 @@ const Create = () => {
                     Wait, file is uploading
                 </div>
             )}
-            <form onSubmit={handleAdd}>
+            <form onSubmit={handleFormSubmit}>
                 <div className="mb-3">
                     <label htmlFor="name">Enter Name</label>
                     <input

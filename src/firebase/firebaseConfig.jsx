@@ -22,3 +22,4 @@ const app = initializeApp(firebaseConfig);
 // for initialize storage 
 export const storage = getStorage(); 
 export default db;
+
