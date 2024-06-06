@@ -8,14 +8,13 @@ const Read = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = async () => {
-    setIsLoading(true);
-    
+    setIsLoading(true); 
     try {
       const snapshot = await getDocs(collection(db, "users"));
-      const user_data = snapshot.docs.map((doc) => {
-        console.log(doc.data());
-        return { ...doc.data(), id: doc.id };
-      })
+      const user_data = snapshot.docs.map((doc) => ({
+        ...doc.data(),
+        id:doc.id
+      }))
       setUserData(user_data)
     } catch (err) {
       console.log(err);
@@ -32,8 +31,7 @@ const Read = () => {
     setIsLoading(true);
     try {
       await deleteDoc(doc(db, "users", id));
-      setUserData(userData.filter(user => user.id !==id))
-      // fetchData();
+      setUserData(userData.filter(user => user.id !== id))
     } catch (err) {
       console.log(err);
     }finally
@@ -77,7 +75,6 @@ const Read = () => {
                       Edit
                     </button>
                   </Link>
-
                 </div>
               </div>
             </div>)
