@@ -14,11 +14,13 @@ const Create = () => {
     const { id } = useParams();
 
     useEffect(() => {
-        if (!id) {
+        if (id) {
             fetchSingleData();
+            setIsEdit(true);
         }
         else {
             restForm();
+            setIsEdit(false);
         }
     }, [id])
 
@@ -26,14 +28,11 @@ const Create = () => {
         try {
             const docRef = doc(db, "users", id);
             const docSnap = await getDoc(docRef);
-            // console.log(docSnap.data());
-            // setFName(docSnap.data().fName);
-            // setFEmail(docSnap.data().fEmail);
-            // setFileUrl(docSnap.data().fileUrl);
             if (docSnap.exists()) {
-                setFName(docSnap.data().fName);
-                setFEmail(docSnap.data().fEmail);
-                setFileUrl(docSnap.data().fileUrl);
+                const data = docSnap.data();
+                setFName(data.fName);
+                setFEmail(data.fEmail);
+                setFileUrl(data.fileUrl);
             } else {
                 console.log("No such Document")
             }
@@ -41,6 +40,7 @@ const Create = () => {
             console.log(err);
         }
     }
+
     const restForm = () => {
         setFName("");
         setFEmail("");
@@ -56,11 +56,12 @@ const Create = () => {
                 let imageRef = ref(storage, `images/${file.name}`);
                 await uploadBytesResumable(imageRef, file);
                 const url = await getDownloadURL(imageRef);
-                console.log(url);
                 setFileUrl(url);
             } catch (err) {
                 console.log(err);
-            } finally { setIsLoading(false); }
+            } finally {
+                setIsLoading(false);
+            }
         }
     }
 
@@ -68,19 +69,14 @@ const Create = () => {
     const handleAdd = async (e) => {
         e.preventDefault();
         let data = {
-            _id: new Date().getTime(),
+            // _id: new Date().getTime(),
             fName,
             fEmail,
             fileUrl,
             created: Timestamp.now(),
         };
-        // const useCollectionRef = collection(db, "users");
         try {
-            // await addDoc(useCollectionRef, data);
             await addDoc(collection(db, "users"), data)
-            // setFName("");
-            // setFEmail("");
-            // setFileUrl("");
             restForm();
             navigate("/read");
         } catch (err) {
@@ -88,17 +84,17 @@ const Create = () => {
         }
     };
     // For edit function 
-    const handleEdit = async () => {
-        // e.preventDefault();
+    const handleEdit = async (e) => {
+        e.preventDefault();
         try {
-            // const docRef = doc(db, "users", id)
-            await updateDoc(doc(db, "users", id), {
+            const docRef = doc(db, "users", id)
+            await updateDoc(docRef, {
                 fName,
                 fEmail,
                 fileUrl,
             });
             restForm();
-            navigate("/");
+            navigate("/read");
         } catch (err) {
             console.log(err)
         }
@@ -106,11 +102,12 @@ const Create = () => {
     const handleFormSubmit = (e) => {
         e.preventDefault();
         if (isEdit) {
-            handleEdit();
+            handleEdit(e);
         } else {
-            handleAdd();
+            handleAdd(e);
         }
     };
+    
     return (
         <div className='w-50 mx-auto'>
             <h2>{isEdit ? "Update a card" : "Add a card"}</h2>
@@ -126,7 +123,8 @@ const Create = () => {
                         type="text"
                         name='name'
                         value={fName}
-                        onChange={(e) => setFName(e.target.value)}
+                        onChange={(e) => setFName(e.target.value)
+                        }
                     />
                 </div>
 
@@ -144,7 +142,7 @@ const Create = () => {
                     <label htmlFor="image">Add Image</label>
                     {fileUrl && (
                         <div>
-                            <img src={fileUrl} alt={fName} className='m-2 rounded' width={500} />
+                            <img src={fileUrl} alt={fName} className='m-2 rounded' width={300}  height={300}/>
                         </div>
                     )}
                     <input
@@ -153,24 +151,12 @@ const Create = () => {
                         onChange={(e) => handleUpload(e)}
                     />
                 </div>
-
-                {isEdit ? (
-                    <button
-                        type="submit"
-                        className={`btn btn-secondary ${isLoading ? "disabled" : ""}`}
-                        onClick={handleEdit}
-                    > Update
-                    </button>)
-                    : (
-                        <button
-                            type="submit"
-                            className={`btn btn-secondary ${isLoading ? "disabled" : ""}`}
-                            onClick={handleAdd}
-                        >
-                            ADD
-                        </button>
-                    )
-                }
+                <button
+                type='submit'
+                className={`btn btn-secondary ${isLoading ? "disabled" :""}`}
+                >
+                    {isEdit ? "Update" :"Add"}
+                </button>
             </form>
         </div>
     );
